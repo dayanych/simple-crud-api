@@ -4,7 +4,6 @@ import { HandlerRequest } from './modules/handle-request';
 import { Users } from './modules/users';
 
 const serverConfig = getServerConfig();
-const PORT = serverConfig.port;
 const usersRepository = new Users();
 
 export const server = http.createServer((req, res) => {
@@ -12,6 +11,6 @@ export const server = http.createServer((req, res) => {
   handler.handleRequest();
 });
 
-server.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+server.listen(serverConfig.port, () => {
+  console.log(`Server running on http://localhost:${serverConfig.port}`);
 });
