@@ -2,17 +2,23 @@ import { IncomingMessage, ServerResponse } from 'http';
 import { validate as uuidValidate } from 'uuid';
 import { RequestMethod } from '../common/enums/method.enum';
 import { getEndpoint } from '../common/helpers/get-endpoint';
-import { Users } from './users';
 import { ContentType } from '../common/enums/content-type.enum';
 import { validateUser } from '../common/helpers/validate-user';
+import { Users } from './users';
 
 export class HandlerRequest {
+  req: IncomingMessage;
+  res: ServerResponse;
   usersRepository: Users;
 
-  constructor(private req: IncomingMessage, private res: ServerResponse) {
+  constructor(
+    req: IncomingMessage,
+    res: ServerResponse,
+    usersRepository: Users
+  ) {
     this.req = req;
     this.res = res;
-    this.usersRepository = new Users();
+    this.usersRepository = usersRepository;
   };
 
   handleRequest() {
@@ -20,7 +26,7 @@ export class HandlerRequest {
     const method = this.req.method;
 
     if (path !== 'users') {
-      this.sendResponse(404, ContentType.Text, 'Path not allowed.');
+      this.sendResponse(404, ContentType.Text, 'Invalid path.');
       return;
     }
   
@@ -32,10 +38,13 @@ export class HandlerRequest {
         this.addUser();
         break;
       case RequestMethod.Put:
+        this.updateUser(id);
         break;
       case RequestMethod.Delete:
+        this.deleteUser(id);
         break;
       default:
+        this.sendResponse(405, ContentType.Text, 'Invalid Method.');
         break;
     }
   };
@@ -85,6 +94,55 @@ export class HandlerRequest {
       const newUser = this.usersRepository.addUser(user);
       this.sendResponse(201, ContentType.Json, newUser);
     });
+  };
+
+  updateUser(id: string | undefined) {
+    if (!id || !uuidValidate(id)) {
+      this.sendResponse(400, ContentType.Text, 'User id must be uuid.');
+      return;
+    };
+
+    const user = this.usersRepository.getUserById(id);
+    if (!user) {
+      this.sendResponse(404, ContentType.Text, 'User not found.');
+      return;
+    };
+
+    let requestBody = '';
+
+    this.req.on('data', (chunk) => {
+      requestBody += chunk;
+    });
+
+    this.req.on('end', () => {
+      const changes = JSON.parse(requestBody);
+
+      if (!validateUser(changes)) {
+        this.sendResponse(400, ContentType.Text, 'Invalid user data.');
+        return;
+      };
+
+      this.usersRepository.updateUser(id, changes);
+
+      const updatedUser = this.usersRepository.getUserById(id);
+      this.sendResponse(200, ContentType.Json, updatedUser);
+    });
+  };
+
+  deleteUser(id: string | undefined) {
+    if (!id ||!uuidValidate(id)) {
+      this.sendResponse(400, ContentType.Text, 'User id must be uuid.');
+      return;
+    }
+
+    const user = this.usersRepository.getUserById(id);
+    if (!user) {
+      this.sendResponse(404, ContentType.Text, 'User not found.');
+      return;
+    };
+
+    this.usersRepository.deleteUser(id);
+    this.sendResponse(204, ContentType.Text, '');
   };
 
   sendResponse(statusCode: number, contentType: ContentType, body: any) {
