@@ -1,8 +1,8 @@
 import { v4 as uuidv4 } from 'uuid'; 
-import { User } from "../common/types/user";
+import { UserType } from "../common/types/user.type";
 
 export class Users {
-  private users: User[] = [];
+  private users: UserType[] = [];
   getUsers() {
     return this.users;
   };
@@ -11,14 +11,14 @@ export class Users {
     return this.users.find(user => user.id === id);
   };
 
-  addUser(user: Omit<User, 'id'>) {
+  addUser(user: Omit<UserType, 'id'>) {
     const newUser = {...user, id: uuidv4() };
     this.users.push(newUser);
 
     return newUser;
   };
 
-  updateUser(id: string, changes: Partial<User>) {
+  updateUser(id: string, changes: Partial<UserType>) {
     this.users = this.users.map(user => {
       if (user.id === id) {
         return {...user,...changes };

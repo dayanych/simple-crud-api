@@ -4,6 +4,7 @@ import { RequestMethod } from '../common/enums/method.enum';
 import { getEndpoint } from '../common/helpers/get-endpoint';
 import { Users } from './users';
 import { ContentType } from '../common/enums/content-type.enum';
+import { validateUser } from '../common/helpers/validate-user';
 
 export class HandlerRequest {
   usersRepository: Users;
@@ -76,12 +77,14 @@ export class HandlerRequest {
 
     this.req.on('end', () => {
       const user = JSON.parse(requestBody);
+      if (!validateUser(user)) {
+        this.sendResponse(400, ContentType.Text, 'Invalid user data.');
+        return;
+      };
 
-      console.log(user);
+      const newUser = this.usersRepository.addUser(user);
+      this.sendResponse(201, ContentType.Json, newUser);
     });
-  
-  
-    console.log(requestBody);
   };
 
   sendResponse(statusCode: number, contentType: ContentType, body: any) {
