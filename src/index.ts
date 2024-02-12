@@ -7,7 +7,7 @@ const serverConfig = getServerConfig();
 const PORT = serverConfig.port;
 const usersRepository = new Users();
 
-const server = http.createServer((req, res) => {
+export const server = http.createServer((req, res) => {
   const handler = new HandlerRequest(req, res, usersRepository);
   handler.handleRequest();
 });
